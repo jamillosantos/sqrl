@@ -96,7 +96,6 @@ func TestSelectBuilderZeroOffsetLimit(t *testing.T) {
 	assert.Equal(t, expectedSql, sql)
 }
 
-
 func TestSelectBuilderFromSelect(t *testing.T) {
 	subQ := Select("c").From("d").Where(Eq{"i": 0})
 	b := Select("a", "b").FromSelect(subQ, "subq")
@@ -218,4 +217,11 @@ func TestSelectWithOptions(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "SELECT DISTINCT SQL_NO_CACHE * FROM foo", sql)
+}
+
+func TestSelectFor(t *testing.T) {
+	sql, _, err := Select("*").From("foo").For(ForUpdate, SkipLocked).ToSql()
+
+	assert.NoError(t, err)
+	assert.Equal(t, "SELECT * FROM foo FOR UPDATE SKIP LOCKED", sql)
 }

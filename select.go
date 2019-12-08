@@ -29,6 +29,8 @@ type SelectBuilder struct {
 	offset      uint64
 	offsetValid bool
 
+	forUpdate Sqlizer
+
 	suffixes exprs
 }
 
@@ -182,6 +184,12 @@ func (b *SelectBuilder) ToSql() (sqlStr string, args []interface{}, err error) {
 		sql.WriteString(strconv.FormatUint(b.offset, 10))
 	}
 
+	if b.forUpdate != nil {
+		sql.WriteString(" ")
+		sqlFor, _, _ := b.forUpdate.ToSql() // Ignoring error because it never happens...
+		sql.WriteString(sqlFor)
+	}
+
 	if len(b.suffixes) > 0 {
 		sql.WriteString(" ")
 		args, _ = b.suffixes.AppendToSql(sql, " ", args)
@@ -333,6 +341,16 @@ func (b *SelectBuilder) Offset(offset uint64) *SelectBuilder {
 // Suffix adds an expression to the end of the query
 func (b *SelectBuilder) Suffix(sql string, args ...interface{}) *SelectBuilder {
 	b.suffixes = append(b.suffixes, Expr(sql, args...))
+
+	return b
+}
+
+// For sets a FOR clause on the query.
+func (b *SelectBuilder) For(t SelectForType, lockingType SelectForLockingType) *SelectBuilder {
+	b.forUpdate = &selectFor{
+		forType:     t,
+		lockingType: lockingType,
+	}
 
 	return b
 }
